@@ -1,9 +1,6 @@
 import { v4 as uuid } from "uuid";
 import EventBus from "./EventBus";
 
-// использую any, потому что не получилось типизировать по хорошему,
-// а время на исходе)
-
 type Props = Record<string, any>;
 
 export default abstract class Block {
@@ -15,6 +12,7 @@ export default abstract class Block {
     INIT: "init",
     FLOW_CDM: "flow:component-did-mount",
     FLOW_CDU: "flow:component-did-update",
+    FLOW_CWU: "flow:component-will-unmount",
     FLOW_RENDER: "flow:render",
   };
 
@@ -51,6 +49,7 @@ export default abstract class Block {
     eventBus.on(Block.EVENTS.INIT, this.init.bind(this));
     eventBus.on(Block.EVENTS.FLOW_CDM, this._componentDidMount.bind(this));
     eventBus.on(Block.EVENTS.FLOW_CDU, this._componentDidUpdate.bind(this));
+    eventBus.on(Block.EVENTS.FLOW_CWU, this._componentWillUnmount.bind(this));
     eventBus.on(Block.EVENTS.FLOW_RENDER, this._render.bind(this));
   }
 
@@ -61,6 +60,14 @@ export default abstract class Block {
     Object.entries(propsAndChildren).forEach(([key, value]) => {
       if (value instanceof Block) {
         children[key] = value;
+      } else if (Array.isArray(value)) {
+        children[key] = [];
+
+        value.forEach((item) => {
+          if (item instanceof Block) {
+            children[key].push(item);
+          }
+        })
       } else {
         props[key] = value;
       }
@@ -91,48 +98,58 @@ export default abstract class Block {
   _componentDidMount() {
     this.componentDidMount();
 
+    this.dispatchComponentDidMount();
+
     Object.values(this.children).forEach((child: any) => {
-      child.dispatchComponentDidMount();
+      if (Array.isArray(child)) {
+        child.forEach((item) => {
+          item.dispatchComponentDidMount();
+        })
+      } else {
+        child.dispatchComponentDidMount();
+      }
     });
   }
 
   // Может переопределять пользователь, необязательно трогать
-  componentDidMount(oldProps?: Props) {
-    console.log(oldProps);
+  componentDidMount() {}
+
+  dispatchComponentDidMount() {
+    this._addEvents();
   }
 
-  dispatchComponentDidMount() {}
+  _componentWillUnmount() {
+    this.componentWillUnmount();
+
+    Object.values(this.children).forEach((child: any) => {
+      if (Array.isArray(child)) {
+        child.forEach((item) => {
+          item.dispatchComponentWillUnmount();
+        })
+      } else {
+        child.dispatchComponentWillUnmount();
+      }
+    });
+  }
+
+  componentWillUnmount() {}
+
+  dispatchComponentWillUnmount() {
+    this._removeEvents();
+  }
 
   setProps = (newProps: Props) => {
     if (!newProps) {
       return;
     }
 
-    this._componentDidUpdate(this.props, newProps);
-    // this.eventBus().emit(Block.EVENTS.FLOW_CDU, this.props, newProps);
-    // Object.assign(this.props, newProps);
-    // this.eventBus().emit(Block.EVENTS.FLOW_CDU);
+    Object.assign(this.props, newProps);
   };
 
-  _componentDidUpdate(oldProps: Props, newProps: Props) {
-    const response = this.componentDidUpdate(oldProps, newProps);
-
-    if (response) {
-      Object.assign(oldProps, newProps);
-    }
-  }
+  _componentDidUpdate() {}
 
   // Может переопределять пользователь, необязательно трогать
-  componentDidUpdate(oldProps: Props, newProps: Props) {
-    let update = false;
-    Object.keys(newProps).forEach((key) => {
-      if (oldProps[key] !== newProps[key]) {
-        update = true;
-      }
-    })
-
-    return update;
-  }
+  componentDidUpdate() {}
 
   _render() {
     const block = this.render();
@@ -140,27 +157,47 @@ export default abstract class Block {
     this._removeEvents();
     this._element.innerHTML = '';
 
-    this._element.appendChild(block);
-    this._addEvents();
+    if (this.props.append === false) {
+      this._element = block;
+    } else {
+      this._element.appendChild(block);
+    }
+
+    this.eventBus().emit(Block.EVENTS.FLOW_CDM);
   }
 
   // Может переопределять пользователь, необязательно трогать
-  render(): any {}
+  render() {}
 
   compile(template: Function, props: Props) {
     if (this.children) {
       const propsAndStubs = { ...props };
 
       Object.entries(this.children).forEach(([key, child]: [string, any]) => {
-        propsAndStubs[key] = `<div data-id="${child._id}"></div>`;
+        if (Array.isArray(child)) {
+          propsAndStubs[key] = [];
+
+          child.forEach((item) => {
+            propsAndStubs[key].push(`<div data-id="${item._id}"></div>`);
+          })
+        } else {
+          propsAndStubs[key] = `<div data-id="${child._id}"></div>`;
+        }
       })
 
       const fragment = this._createDocumentElement('template');
       fragment.innerHTML = template(propsAndStubs);
 
       Object.values(this.children).forEach((child: Props) => {
-        const stub = fragment.content.querySelector(`[data-id="${child._id}"]`);
-        stub.replaceWith(child.getContent());
+        if (Array.isArray(child)) {
+          child.forEach((item) => {
+            const stub = fragment.content.querySelector(`[data-id="${item._id}"]`);
+            stub.replaceWith(item.getContent());
+          })
+        } else {
+          const stub = fragment.content.querySelector(`[data-id="${child._id}"]`);
+          stub.replaceWith(child.getContent());
+        }
       });
 
       return fragment.content;
@@ -175,6 +212,8 @@ export default abstract class Block {
     events.forEach((eventFun: Function, eventName: string) => {
       if (eventName === 'blur') {
         this._element.querySelector('input')?.addEventListener(eventName, eventFun);
+      } else if (eventName === 'keydown') {
+        this._element.querySelector('input')?.addEventListener(eventName, eventFun);
       } else {
         this._element.addEventListener(eventName, eventFun);
       }
@@ -187,15 +226,11 @@ export default abstract class Block {
     events.forEach((eventFun: Function, eventName: string) => {
       if (eventName === 'blur') {
         this._element.querySelector('input')?.removeEventListener(eventName, eventFun);
+      } else if (eventName === 'keydown') {
+        this._element.querySelector('input')?.removeEventListener(eventName, eventFun);
       } else {
         this._element.removeEventListener(eventName, eventFun);
       }
-
-      // if (eventName === 'submit') {
-      //   this._element.querySelector('form')?.removeEventListener(eventName, eventFun);
-      // } else {
-      //   this._element.removeEventListener(eventName, eventFun);
-      // }
     })
   }
 
@@ -216,7 +251,7 @@ export default abstract class Block {
         }
 
         target[prop] = newValue;
-        self.eventBus().emit(Block.EVENTS.INIT);
+        self.eventBus().emit(Block.EVENTS.FLOW_RENDER);
 
         return true;
       },
@@ -226,5 +261,21 @@ export default abstract class Block {
     })
 
     return proxyProps;
+  }
+
+  _show() {
+    this.show();
+  }
+
+  show() {
+  }
+
+  _hide() {
+    this.hide();
+  }
+
+  hide() {
+    this.eventBus().emit(Block.EVENTS.FLOW_CWU);
+    this._element.remove();
   }
 }
