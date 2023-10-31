@@ -23,7 +23,8 @@
     "lint:scss": "stylelint \"./src/**/*.scss\"",
     "lint:scss:fix": "stylelint \"./src/**/*.scss\" --fix",
     "lint:all:fix": "npm-run-all lint:fix lint:scss:fix",
-    "test": "mocha"
+    "test": "mocha",
+    "prepare": "husky install"
   },
   "devDependencies": {
     "@types/chai": "^4.3.9",
