@@ -26,12 +26,7 @@ type MethodOnly = {
 
 type OptionsWithMethod = Options & MethodOnly;
 
-// type XHRInstance = {
-//   status: number,
-//   responseText: string,
-// }
-
-type ReturnedData = {
+export type ReturnedData = {
   status: number,
   response: any
 }
@@ -130,7 +125,7 @@ function queryStringify(data: [string, string][] | object): string {
   let result = '?';
 
   for (const [key, value] of Object.entries(data)) {
-    result += `${key}=${value.toString()}&`;
+    result += `${key}=${encodeURIComponent(value.toString())}&`;
   }
 
   return result.slice(0, result.length - 1);

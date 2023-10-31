@@ -111,7 +111,6 @@ export default abstract class Block {
     });
   }
 
-  // Может переопределять пользователь, необязательно трогать
   componentDidMount() {}
 
   dispatchComponentDidMount() {
@@ -148,7 +147,6 @@ export default abstract class Block {
 
   _componentDidUpdate() {}
 
-  // Может переопределять пользователь, необязательно трогать
   componentDidUpdate() {}
 
   _render() {
@@ -166,7 +164,6 @@ export default abstract class Block {
     this.eventBus().emit(Block.EVENTS.FLOW_CDM);
   }
 
-  // Может переопределять пользователь, необязательно трогать
   render() {}
 
   compile(template: Function, props: Props) {
