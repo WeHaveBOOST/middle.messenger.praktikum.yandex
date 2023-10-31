@@ -130,8 +130,7 @@
   .d-modal {
     opacity: 1;
     visibility: visible;
-    overflow-x: hidden;
-    overflow-y: auto;
+    overflow: hidden auto;
   }
 }
 

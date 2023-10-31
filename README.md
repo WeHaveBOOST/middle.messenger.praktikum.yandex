@@ -16,6 +16,16 @@
 - `npm run dev` — запуск версии для разработки,
 - `npm run build` — сборка проекта.
 
+## Команды
+
+- `npm run ts` — проверить ts,
+- `npm run lint` — проверить файлы на ошибки eslint,
+- `npm run lint:fix` — пофиксить ошибки eslint (если возможно),
+- `npm run lint:scss` — проверить файлы стилей,
+- `npm run lint:scss:fix` — пофиксить файлы стилей (если возможно),
+- `npm run lint:all:fix` — запускает lint:fix и lint:scss:fix,
+- `npm run test` — запускает unit тесты,
+
 ## Структура
 
 - /src/pages/ - Компоненты страниц

@@ -130,7 +130,7 @@ class Router {
   }
 }
 
-describe.only('Router', () => {
+describe('Router', () => {
   const originalForward = window.history.forward;
   const originalBack = window.history.back;
   const getContentFake = sinon.fake.returns(document.createElement('div'));
