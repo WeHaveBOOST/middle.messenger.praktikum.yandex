@@ -203,8 +203,7 @@ body {
 
   &__list-item {
     display: flex;
-    justify-content: space-between;
-    align-content: center;
+    place-content: space-between center;
     padding-bottom: 7px;
     border-bottom: 1px solid #eee;
     font-weight: 500;
@@ -217,8 +216,7 @@ body {
 
     .field-text {
       display: flex;
-      justify-content: space-between;
-      align-content: center;
+      place-content: space-between center;
       flex-wrap: wrap;
     }
 

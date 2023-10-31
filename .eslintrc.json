@@ -10,7 +10,7 @@
     }
   },
   "rules": {
-    "max-len": [2, 100],
+    "max-len": [2, 110],
     "@typescript-eslint/no-unused-vars": 2,
     "no-console": 0,
     "import/extensions": 0,
@@ -33,6 +33,9 @@
     "camelcase": 0,
     "dot-notation": 0,
     "consistent-return": 0,
-    "no-constructor-return": 0
+    "no-constructor-return": 0,
+    "prefer-const": ["error", { "destructuring": "all" }],
+    "max-classes-per-file": 0,
+    "no-new": 0
   }
 }

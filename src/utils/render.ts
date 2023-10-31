@@ -1,4 +1,4 @@
-import { initDropdowns } from "./index";
+import { initDropdowns } from "./index.ts";
 
 type Page = {
   getContent: Function

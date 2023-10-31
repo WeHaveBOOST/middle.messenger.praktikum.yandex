@@ -10,6 +10,8 @@ import cloneDeep from "./cloneDeep";
 import queryStringify from "./queryStringify";
 import set from "./set";
 import initDropdowns from "./initDropDowns";
+import omitObject from "./omitObject";
+import takeFromArray from "./takeFromArray";
 
 export {
   render,
@@ -25,4 +27,6 @@ export {
   queryStringify,
   set,
   initDropdowns,
+  omitObject,
+  takeFromArray,
 }

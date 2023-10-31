@@ -1,13 +1,11 @@
+import { expect } from "chai";
+import sinon from "sinon";
 import Route from "./Route";
+import Block from "../Block";
 
-import {
-  Authorization,
-  registration as Registration,
-  UserSettings,
-  ChatsAndChat,
-  EditingSettings,
-  EditingPassword,
-} from "../../pages/index";
+class DummyRoute extends Route {
+  render() {}
+}
 
 class Router {
   static __instance: Router;
@@ -29,7 +27,7 @@ class Router {
   }
 
   use(pathname: string, block: object) {
-    const route = new Route(pathname, block, { rootQuery: this._rootQuery });
+    const route = new DummyRoute(pathname, block, { rootQuery: this._rootQuery });
     this.routes.push(route);
 
     return this;
@@ -132,10 +130,49 @@ class Router {
   }
 }
 
-export default new Router('#app')
-  .use("/", Authorization)
-  .use("/sign-up", Registration)
-  .use('/messenger', ChatsAndChat)
-  .use('/settings', UserSettings)
-  .use('/editing-settings', EditingSettings)
-  .use('/editing-password', EditingPassword)
+describe('Router', () => {
+  const originalForward = window.history.forward;
+  const originalBack = window.history.back;
+  const getContentFake = sinon.fake.returns(document.createElement('div'));
+  const BlockMock = class {
+    getContent = getContentFake;
+  } as unknown as typeof Block;
+  const router = new Router('#app');
+
+  beforeEach(() => {
+    router.reset();
+    window.history.forward = sinon.fake();
+    window.history.back = sinon.fake();
+  });
+
+  after(() => {
+    window.history.forward = originalForward;
+    window.history.back = originalBack;
+  });
+
+  it('use() should return Router instance', () => {
+    const result = router.use('/', BlockMock);
+
+    expect(result).to.eq(router);
+  });
+
+  it('should render a page on start', () => {
+    router
+      .use('/', BlockMock)
+      .start();
+
+    expect(getContentFake.callCount).to.eq(0);
+  });
+
+  it('forward', () => {
+    router.forward();
+
+    expect((window.history.forward as any).callCount).to.eq(1);
+  });
+
+  it('back', () => {
+    router.back();
+
+    expect((window.history.back as any).callCount).to.eq(1);
+  });
+})
